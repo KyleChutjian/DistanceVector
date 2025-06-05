@@ -1,20 +1,3 @@
-# Distance Vector project for CS 6250: Computer Networks
-#
-# This defines a DistanceVector (specialization of the Node class)
-# that can run the Bellman-Ford algorithm. The TODOs are all related 
-# to implementing BF. Students should modify this file as necessary,
-# guided by the TODO comments and the assignment instructions. This 
-# is the only file that needs to be modified to complete the project.
-#
-# Student code should NOT access the following members, otherwise they may violate
-# the spirit of the project:
-#
-# topolink (parameter passed to initialization function)
-# self.topology (link to the greater topology structure used for message passing)
-#
-# Copyright 2017 Michael D. Brown
-# Based on prior work by Dave Lillethun, Sean Donovan, Jeffrey Randow, new VM fixes by Jared Scott and James Lohse.
-
 from Node import *
 from helpers import *
 
@@ -29,6 +12,15 @@ class DistanceVector(Node):
         super(DistanceVector, self).__init__(name, topolink, outgoing_links, incoming_links)
         
         # TODO: Create any necessary data structure(s) to contain the Node's internal state / distance vector data
+        # B. Represent distance vector
+        print(f"name: {name}, outgoing_links: {str(outgoing_links)}, incoming_links: {str(incoming_links)}")
+        self.name = name
+        self.topolink = topolink
+        self.outgoing_links = outgoing_links
+        self.incoming_links = incoming_links
+        self.distance_vector = {self.name: 0}
+        # for neighbor in self.outgoing_links:
+        #     self.distance_vector[neighbor.name] = neighbor.weight
 
     def send_initial_messages(self):
         """ This is run once at the beginning of the simulation, after all
@@ -41,6 +33,10 @@ class DistanceVector(Node):
 
         # TODO - Each node needs to build a message and send it to each of its neighbors
         # HINT: Take a look at the skeleton methods provided for you in Node.py
+        message = Message(self.name, self.distance_vector)
+        for neighbor in self.incoming_links:
+            print(f"Sending initial message to neighbor: {neighbor.name}")
+            self.send_msg(message, neighbor.name)
 
     def process_BF(self):
         """ This is run continuously (repeatedly) during the simulation. DV
@@ -48,9 +44,18 @@ class DistanceVector(Node):
         messages that need to be sent to other nodes as a result are sent. """
 
         # Implement the Bellman-Ford algorithm here.  It must accomplish two tasks below:
-        # TODO 1. Process queued messages       
-        for msg in self.messages:            
-            pass
+        # TODO 1. Process queued messages     
+        print(self.name + " processing messages...")  
+        for msg in self.messages:
+            sender_name = msg.sender_name
+            sender_vector = msg.distance_vector
+            print(f"{sender_name},{sender_vector}")
+
+
+            # # Update distance vector based on received message
+            # for neighbor, distance in sender_vector.items():
+            #     if neighbor not in self.distance_vector:
+            #         self.distance_vector[neighbor] = float('inf')
         
         # Empty queue
         self.messages = []
@@ -70,4 +75,20 @@ class DistanceVector(Node):
         
         # TODO: Use the provided helper function add_entry() to accomplish this task (see helpers.py).
         # An example call that which prints the format example text above (hardcoded) is provided.        
-        add_entry("A", "(A,0) (B,1) (C,-2)")        
+        print(f"Logging distances for node {self.name}: {self.distance_vector}")
+        
+        # add_entry("A", "(A,0) (B,1) (C,-2)")
+        
+
+
+class Message:
+
+    def __init__(self, sender_name, distance_vector):
+        self.sender_name = sender_name
+        self.distance_vector = distance_vector
+
+    def __str__(self):
+        return f"Message from {self.sender_name}: {self.distance_vector}"
+
+    def __repr__(self):
+        return self.__str__()

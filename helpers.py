@@ -1,10 +1,3 @@
-# Distance Vector project for CS 6250: Computer Networks
-#
-# Helper functions for the DistanceVector project. Students should not
-# modify this file.
-#
-# Copyright 2015 Sean Donovan, adapted for new VM by Jared Scott and James Lohse
-
 """Helpers for Distance Vector project"""
 logfile = None
 current_logs = None

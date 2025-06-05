@@ -1,12 +1,3 @@
-# Distance Vector project for CS 6250: Computer Networks
-#
-# This defines a Node that can run the Bellman-Ford algorithm. Students
-# should not modify this file, but should instead modify the DistanceVector
-# class that inherits from Node.
-#
-# Copyright 2017 Michael D. Brown
-# Based on prior work by Sean Donovan and Jeffrey Randow
-
 class Neighbor(object):
 
     def __init__(self, neighbor_node, weight):
