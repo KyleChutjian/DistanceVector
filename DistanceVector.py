@@ -13,14 +13,13 @@ class DistanceVector(Node):
         
         # TODO: Create any necessary data structure(s) to contain the Node's internal state / distance vector data
         # B. Represent distance vector
-        print(f"name: {name}, outgoing_links: {str(outgoing_links)}, incoming_links: {str(incoming_links)}")
         self.name = name
         self.topolink = topolink
         self.outgoing_links = outgoing_links
         self.incoming_links = incoming_links
         self.distance_vector = {self.name: 0}
-        # for neighbor in self.outgoing_links:
-        #     self.distance_vector[neighbor.name] = neighbor.weight
+        self.ready_to_write = False
+        self.written = False
 
     def send_initial_messages(self):
         """ This is run once at the beginning of the simulation, after all
@@ -35,7 +34,6 @@ class DistanceVector(Node):
         # HINT: Take a look at the skeleton methods provided for you in Node.py
         message = Message(self.name, self.distance_vector)
         for neighbor in self.incoming_links:
-            print(f"Sending initial message to neighbor: {neighbor.name}")
             self.send_msg(message, neighbor.name)
 
     def process_BF(self):
@@ -44,23 +42,36 @@ class DistanceVector(Node):
         messages that need to be sent to other nodes as a result are sent. """
 
         # Implement the Bellman-Ford algorithm here.  It must accomplish two tasks below:
-        # TODO 1. Process queued messages     
-        print(self.name + " processing messages...")  
+        # TODO 1. Process queued messages
+        original_distance_vector = self.distance_vector.copy()
         for msg in self.messages:
-            sender_name = msg.sender_name
-            sender_vector = msg.distance_vector
-            print(f"{sender_name},{sender_vector}")
+            v = msg.sender_name
+            v_distance_vector = msg.distance_vector
 
+            outgoing_neighbor_weight = self.get_outgoing_neighbor_weight(v)
+            if outgoing_neighbor_weight == "Node Not Found":
+                continue
+            _, cost_to_v = outgoing_neighbor_weight
 
-            # # Update distance vector based on received message
-            # for neighbor, distance in sender_vector.items():
-            #     if neighbor not in self.distance_vector:
-            #         self.distance_vector[neighbor] = float('inf')
+            for dest, dist_to_dest in v_distance_vector.items():
+                new_cost = cost_to_v + dist_to_dest
+
+                self.distance_vector[dest] = min(
+                    self.distance_vector.get(dest, float('inf')),
+                    new_cost
+                )
         
         # Empty queue
         self.messages = []
 
-        # TODO 2. Send neighbors updated distances               
+        # TODO 2. Send neighbors updated distances    
+        if self.distance_vector != original_distance_vector:
+            message = Message(self.name, self.distance_vector)
+            for neighbor in self.incoming_links:
+                self.send_msg(message, neighbor.name)
+            self.ready_to_write = False
+        else:
+            self.ready_to_write = True
 
     def log_distances(self):
         """ This function is called immedately after process_BF each round.  It 
@@ -78,7 +89,15 @@ class DistanceVector(Node):
         print(f"Logging distances for node {self.name}: {self.distance_vector}")
         
         # add_entry("A", "(A,0) (B,1) (C,-2)")
+        if not self.ready_to_write or self.written:
+            return
         
+        entry = " ".join(
+            f"({dest},{dist})"
+            for dest, dist in sorted(self.distance_vector.items())
+        )
+        add_entry(self.name, entry)
+        self.written = True
 
 
 class Message:
