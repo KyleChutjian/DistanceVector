@@ -64,12 +64,6 @@ class DistanceVector(Node):
         # Empty queue
         self.messages = []
 
-        # Negative cycle check
-        if not hasattr(self, 'prev_distance_vector'):
-            self.prev_distance_vector = dict(self.distance_vector)
-        if not hasattr(self, 'neg_cycle_count'):
-            self.neg_cycle_count = 0
-
         # TODO 2. Send neighbors updated distances    
         if self.distance_vector != original_distance_vector:
             message = Message(self.name, self.distance_vector)
