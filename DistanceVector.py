@@ -53,22 +53,28 @@ class DistanceVector(Node):
 
             for dest, dist_to_dest in v_distance_vector.items():
                 new_cost = cost_to_v + dist_to_dest
+                if dest != self.name:
+                    if new_cost <= -99:
+                        new_cost = -99
+                    self.distance_vector[dest] = min(
+                        self.distance_vector.get(dest, float('inf')),
+                        new_cost
+                    )
                 if dest == self.name and new_cost < 0:
-                    print(f"Warning: {self.name} received a distance to itself from {v}.")
-                    
-                self.distance_vector[dest] = min(
-                    self.distance_vector.get(dest, float('inf')),
-                    new_cost
-                )
+                    print(f"Warning: {v} sent {self.name} cost {new_cost}.")
         
         # Empty queue
         self.messages = []
 
-        # TODO 2. Send neighbors updated distances    
+        # TODO 2. Send neighbors updated distances
+
+        # If distance vector has changed
         if self.distance_vector != original_distance_vector:
             message = Message(self.name, self.distance_vector)
             for neighbor in self.incoming_links:
-                self.send_msg(message, neighbor.name)
+                # Don't send message to self
+                if neighbor.name != self.name: # and message.get_dv(neighbor.name) != -99:
+                    self.send_msg(message, neighbor.name)
 
     def log_distances(self):
         """ This function is called immedately after process_BF each round.  It 
@@ -101,3 +107,7 @@ class Message:
 
     def __repr__(self):
         return self.__str__()
+    
+    def get_dv(self, neighbor_name):
+        return self.distance_vector.get(neighbor_name, float('inf'))
+        
