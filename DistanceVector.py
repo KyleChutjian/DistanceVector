@@ -18,8 +18,6 @@ class DistanceVector(Node):
         self.outgoing_links = outgoing_links
         self.incoming_links = incoming_links
         self.distance_vector = {self.name: 0}
-        self.ready_to_write = False
-        self.written = False
 
     def send_initial_messages(self):
         """ This is run once at the beginning of the simulation, after all
@@ -51,11 +49,13 @@ class DistanceVector(Node):
             outgoing_neighbor_weight = self.get_outgoing_neighbor_weight(v)
             if outgoing_neighbor_weight == "Node Not Found":
                 continue
-            _, cost_to_v = outgoing_neighbor_weight
+            outgoing_neighbor_name, cost_to_v = outgoing_neighbor_weight
 
             for dest, dist_to_dest in v_distance_vector.items():
                 new_cost = cost_to_v + dist_to_dest
-
+                if dest == self.name and new_cost < 0:
+                    print(f"Warning: {self.name} received a distance to itself from {v}.")
+                    
                 self.distance_vector[dest] = min(
                     self.distance_vector.get(dest, float('inf')),
                     new_cost
@@ -64,14 +64,17 @@ class DistanceVector(Node):
         # Empty queue
         self.messages = []
 
+        # Negative cycle check
+        if not hasattr(self, 'prev_distance_vector'):
+            self.prev_distance_vector = dict(self.distance_vector)
+        if not hasattr(self, 'neg_cycle_count'):
+            self.neg_cycle_count = 0
+
         # TODO 2. Send neighbors updated distances    
         if self.distance_vector != original_distance_vector:
             message = Message(self.name, self.distance_vector)
             for neighbor in self.incoming_links:
                 self.send_msg(message, neighbor.name)
-            self.ready_to_write = False
-        else:
-            self.ready_to_write = True
 
     def log_distances(self):
         """ This function is called immedately after process_BF each round.  It 
@@ -85,19 +88,12 @@ class DistanceVector(Node):
         NOTE: A0 shows that the distance to self is 0 """
         
         # TODO: Use the provided helper function add_entry() to accomplish this task (see helpers.py).
-        # An example call that which prints the format example text above (hardcoded) is provided.        
-        print(f"Logging distances for node {self.name}: {self.distance_vector}")
-        
-        # add_entry("A", "(A,0) (B,1) (C,-2)")
-        if not self.ready_to_write or self.written:
-            return
-        
+        # An example call that which prints the format example text above (hardcoded) is provided.                
         entry = " ".join(
             f"({dest},{dist})"
-            for dest, dist in sorted(self.distance_vector.items())
+            for dest, dist in self.distance_vector.items()
         )
         add_entry(self.name, entry)
-        self.written = True
 
 
 class Message:
